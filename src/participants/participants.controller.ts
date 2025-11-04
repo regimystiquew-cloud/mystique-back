@@ -56,11 +56,15 @@ export class ParticipantsController {
     @Query('status') status?: Status,
     @Query('eventId') eventId?: string,
     @Query('search') search?: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 50,
   ) {
-    return this.participantService.getAllParticipants({
+    return this.participantService.getAllParticipantsPaginated({
       status,
       eventId,
       search,
+      page: +page,
+      limit: +limit,
     });
   }
 

@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 import { JwtService } from '@nestjs/jwt';
-import { supabase } from './config/supabase.config';
+import { getSupabaseClient } from './config/supabase.config';
 import { RegistrationType, Role } from '@prisma/client';
 
 @Injectable()
@@ -19,7 +19,7 @@ export class AuthService {
     accessToken: string,
     registrationType?: RegistrationType,
   ) {
-    const { data, error } = await supabase.auth.getUser(accessToken);
+    const { data, error } = await getSupabaseClient().auth.getUser(accessToken);
 
     if (error || !data.user) {
       throw new UnauthorizedException('Invalid Supabase Token');

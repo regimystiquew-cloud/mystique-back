@@ -148,6 +148,70 @@ export class ParticipantsService {
     });
   }
 
+  //for admin with pagination
+  async getAllParticipantsPaginated(filters: {
+    status?: Status;
+    eventId?: string;
+    search?: string;
+    page: number;
+    limit: number;
+  }) {
+    const { page, limit, ...otherFilters } = filters;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (otherFilters?.status) {
+      where.status = otherFilters.status;
+    }
+
+    if (otherFilters?.eventId) {
+      where.eventId = otherFilters.eventId;
+    }
+
+    if (otherFilters?.search) {
+      where.OR = [
+        { name: { contains: otherFilters.search, mode: 'insensitive' } },
+        { email: { contains: otherFilters.search, mode: 'insensitive' } },
+        { contact: { contains: otherFilters.search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [participants, total] = await Promise.all([
+      this.prisma.participant.findMany({
+        where,
+        include: {
+          cl: {
+            select: {
+              userId: true,
+              name: true,
+              email: true,
+            },
+          },
+          event: {
+            select: {
+              eventId: true,
+              name: true,
+              category: true,
+            },
+          },
+        },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.participant.count({ where }),
+    ]);
+
+    return {
+      data: participants,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
   async approveParticipant(id: number) {
     const participant = await this.prisma.participant.findUnique({
       where: { id },
