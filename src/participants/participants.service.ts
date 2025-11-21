@@ -363,6 +363,19 @@ export class ParticipantsService {
         .then((results) => results[1]);
     }
 
+    if (participant.status === Status.REJECTED) {
+      // Reset rejected participant to pending for re-review
+      return this.prisma.participant.update({
+        where: { id },
+        data: {
+          ...data,
+          status: Status.PENDING,
+          rejectionReason: null, // Clear rejection reason
+          submittedAt: new Date(), // Update submission time
+        },
+      });
+    }
+
     return this.prisma.participant.update({
       where: { id },
       data,
