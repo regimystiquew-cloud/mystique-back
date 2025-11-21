@@ -38,9 +38,40 @@ export class ParticipantsService {
     });
 
     if (existingParticipant) {
-      throw new BadRequestException(
-        'This email is already registered for this event',
-      );
+      // Allow re-registering rejected participants by updating them
+      if (existingParticipant.status === Status.REJECTED) {
+        return this.prisma.participant.update({
+          where: { id: existingParticipant.id },
+          data: {
+            ...data,
+            clId, // Ensure ownership
+            status: Status.PENDING, // Reset to pending for re-review
+            rejectionReason: null, // Clear rejection reason
+            submittedAt: new Date(), // Update submission time
+          },
+          include: {
+            cl: {
+              select: {
+                userId: true,
+                name: true,
+                email: true,
+              },
+            },
+            event: {
+              select: {
+                eventId: true,
+                name: true,
+                category: true,
+              },
+            },
+          },
+        });
+      } else {
+        // Block if already pending or approved
+        throw new BadRequestException(
+          'This email is already registered for this event',
+        );
+      }
     }
 
     return this.prisma.participant.create({
