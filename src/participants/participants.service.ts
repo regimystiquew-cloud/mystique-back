@@ -342,6 +342,11 @@ export class ParticipantsService {
       throw new ForbiddenException('You can only update your own participants');
     }
 
+    // Check if event is accepting updates
+    if (!participant.event.isActive || participant.event.isLocked) {
+      throw new BadRequestException('Event is not accepting updates');
+    }
+
     if (participant.status === Status.APPROVED) {
       return await this.prisma
         .$transaction([
